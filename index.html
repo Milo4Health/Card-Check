@@ -251,6 +251,7 @@ function evaluate(i){
     if(i.status==='raw') return rawRule(i,250);
     if(auto10) return R('GRAB','Certified auto (Auth/Auto 10) — auto-keep.');
     if(!gradeGatePass(i)) return R('PASS','Below the '+gateLabel(i.year)+' bar for its era.');
+    if(i.year<1986) return R('GRAB','Pre-1986 vintage — clears grade bar, pop doesn’t apply.');
     if(i.pop==null) return R('PENDING','Need pop@grade — under 40 grabs, 40+ skips.');
     return i.pop<40 ? R('GRAB','Clears grade bar + low pop ('+i.pop+' < 40).')
                     : R('PASS','Pop '+i.pop+' (≥40) — too common.');
