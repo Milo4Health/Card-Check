@@ -10,7 +10,7 @@
 <style>
   :root{
     --paper:#f4efe3; --paper2:#e7dec9; --ink:#211c14; --soft:#6a6049; --line:#cabd9f;
-    --ivy:#0e3386; --tortuga:#9a2a2a; --sandlot:#2f7d4f; --swamp:#cf7008; --headwaters:#1d4e63;
+    --ivy:#0e3386; --tortuga:#9a2a2a; --lumber:#7a5230; --swamp:#cf7008; --headwaters:#1d4e63;
     --grab:#2f7d4f; --pass:#9a2a2a; --pend:#b8860b;
     --c:#211c14;
   }
@@ -68,20 +68,12 @@
   <div class="seg coll" id="coll">
     <button data-c="ivy"        style="--bc:var(--ivy)">Ivy</button>
     <button data-c="tortuga"    style="--bc:var(--tortuga)">Tortuga</button>
-    <button data-c="sandlot"    style="--bc:var(--sandlot)">Sandlot</button>
+    <button data-c="lumber"     style="--bc:var(--lumber)">Lumber</button>
     <button data-c="swamp"      style="--bc:var(--swamp)">Swamp</button>
     <button data-c="headwaters" style="--bc:var(--headwaters)">Headwtr</button>
   </div>
 
   <div class="fit" id="fitNote">Pick a collection. You're confirming the player/team already fits — this only judges the card.</div>
-
-  <div id="playerWrap" class="hide">
-    <label>Which player</label>
-    <div class="seg" id="player">
-      <button data-p="griffey" class="on">Griffey <span class="hint" style="display:block">hinge 1992</span></button>
-      <button data-p="chipper">Chipper <span class="hint" style="display:block">hinge 1995</span></button>
-    </div>
-  </div>
 
   <label>Status</label>
   <div class="seg" id="status">
@@ -118,7 +110,7 @@
   <div id="verdict"><div class="v"></div><div class="why"></div></div>
 
 <script>
-const state = {coll:null, player:'griffey', status:'graded',
+const state = {coll:null, status:'graded',
                topPop:false, auto:false, rc:false, spch:false};
 
 // ---- wiring ----
@@ -133,19 +125,16 @@ function bindSeg(id, key, cb){
 }
 bindSeg('coll','coll',b=>{
   state.coll=b.dataset.c;
-  const map={ivy:'--ivy',tortuga:'--tortuga',sandlot:'--sandlot',swamp:'--swamp',headwaters:'--headwaters'};
-  const names={ivy:'Cubs',tortuga:'Buccaneers (NFL)',sandlot:'Griffey or Chipper',swamp:'Florida Gators (any sport)',headwaters:'MN pro teams'};
+  const map={ivy:'--ivy',tortuga:'--tortuga',lumber:'--lumber',swamp:'--swamp',headwaters:'--headwaters'};
+  const names={ivy:'Cubs',tortuga:'Buccaneers (NFL)',lumber:'500 2B + 350 HR club (post-1980)',swamp:'Florida Gators (any sport)',headwaters:'MN pro teams'};
   document.documentElement.style.setProperty('--bc','var('+map[state.coll]+')');
   document.querySelector('.fit').style.setProperty('--bc','var('+map[state.coll]+')');
   document.getElementById('fitNote').innerHTML='Confirmed fit: <b>'+names[state.coll]+'</b>. This judges the card only.';
-  // sandlot player
-  document.getElementById('playerWrap').classList.toggle('hide', state.coll!=='sandlot');
   // graded-only collections: hide Raw
-  const gradedOnly = (state.coll==='tortuga'||state.coll==='sandlot');
+  const gradedOnly = (state.coll==='tortuga');
   document.querySelector('#status button[data-rawopt]').classList.toggle('hide', gradedOnly);
   if(gradedOnly && state.status==='raw'){ setStatus('graded'); }
 });
-bindSeg('player','player',b=>state.player=b.dataset.p);
 function setStatus(s){
   state.status=s;
   document.querySelectorAll('#status button').forEach(x=>x.classList.toggle('on',x.dataset.s===s));
@@ -217,19 +206,18 @@ function evaluate(i){
     return R('GRAB','Clears the '+gateLabel(i.year)+' bar.');
   }
 
-  // ---- SANDLOT (graded only) ----
-  if(c==='sandlot'){
-    if(i.status==='raw') return R('PASS','Sandlot is graded-only — don’t grab raw.');
+  // ---- LUMBER (graded + raw holding pen) ----
+  if(c==='lumber'){
     if(i.status==='atpsa') return R('PENDING','Out at PSA — decide when the grade is back.');
+    if(i.status==='raw') return R('GRAB','Raw holding pen — stage it, decide once it’s slabbed.');
     if(auto10) return R('GRAB','Certified auto (Auth/Auto 10) — auto-keep.');
+    if(i.topPop) return R('GRAB','Top Pop — auto-keep.');
     if(!gradeGatePass(i)) return R('PASS','Below the '+gateLabel(i.year)+' bar for its era.');
-    const hinge = i.player==='chipper'?1995:1992;
-    if(i.year>hinge){
-      if(i.pop==null) return R('PENDING','Need pop@grade — under 40 grabs, 40+ skips.');
-      return i.pop<40 ? R('GRAB','Gem + low pop ('+i.pop+' < 40).')
-                      : R('PASS','Pop '+i.pop+' (≥40) — too common for a modern card.');
-    }
-    return R('GRAB','Early card (≤'+hinge+') — keeps at grade, pop aside.');
+    if(i.year<1986) return R('GRAB','Pre-1986 vintage — clears grade bar, pop doesn’t apply.');
+    if(i.rc||i.auto||i.spch||(i.pr!=null&&i.pr<=99)) return R('GRAB','Clears grade bar + RC/scarce (RC / auto / SP / ≤99).');
+    if(i.pop==null) return R('PENDING','Need pop@grade — under 40 grabs, 40+ skips.');
+    return i.pop<40 ? R('GRAB','Clears grade bar + low pop ('+i.pop+' < 40).')
+                    : R('PASS','Pop '+i.pop+' (≥40) — too common.');
   }
 
   // ---- SWAMP (graded + raw) ----
@@ -265,7 +253,7 @@ document.getElementById('go').onclick=()=>{
   const prRaw = document.getElementById('pr').value;
   const popRaw = document.getElementById('pop').value;
   const i = {
-    coll:state.coll, player:state.player, status:state.status,
+    coll:state.coll, status:state.status,
     grade:document.getElementById('grade').value,
     year: isNaN(yr)?null:yr,
     pr: prRaw===''?null:parseInt(prRaw),
