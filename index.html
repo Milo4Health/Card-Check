@@ -57,6 +57,9 @@
   #verdict.PENDING{background:var(--pend);}
   .hide{display:none!important;}
   .hint{font-size:10.5px;color:var(--soft);margin-top:4px;}
+  .roster{display:flex;flex-wrap:wrap;gap:5px;margin:2px 0 2px;}
+  .roster span{background:var(--paper2);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:11.5px;color:var(--ink);line-height:1.15;}
+  .roster span em{color:var(--soft);font-style:normal;font-size:9.5px;}
 </style>
 </head>
 <body>
@@ -74,6 +77,13 @@
   </div>
 
   <div class="fit" id="fitNote">Pick a collection. You're confirming the player/team already fits — this only judges the card.</div>
+
+  <div id="rosterWrap" class="hide">
+    <label>Lumber roster — is your guy here? (16)</label>
+    <div class="roster">
+      <span>Carlos Beltrán</span><span>Adrián Beltré</span><span>Barry Bonds</span><span>Miguel Cabrera</span><span>Freddie Freeman</span><span>Luis Gonzalez <em>(DBacks)</em></span><span>Ken Griffey Jr.</span><span>Todd Helton</span><span>Chipper Jones</span><span>Jeff Kent</span><span>David Ortiz</span><span>Rafael Palmeiro</span><span>Albert Pujols</span><span>Manny Ramirez</span><span>Cal Ripken Jr.</span><span>Alex Rodriguez</span>
+    </div>
+  </div>
 
   <label>Status</label>
   <div class="seg" id="status">
@@ -130,6 +140,7 @@ bindSeg('coll','coll',b=>{
   document.documentElement.style.setProperty('--bc','var('+map[state.coll]+')');
   document.querySelector('.fit').style.setProperty('--bc','var('+map[state.coll]+')');
   document.getElementById('fitNote').innerHTML='Confirmed fit: <b>'+names[state.coll]+'</b>. This judges the card only.';
+  document.getElementById('rosterWrap').classList.toggle('hide', state.coll!=='lumber');
   // graded-only collections: hide Raw
   const gradedOnly = (state.coll==='tortuga');
   document.querySelector('#status button[data-rawopt]').classList.toggle('hide', gradedOnly);
