@@ -10,7 +10,7 @@
 <style>
   :root{
     --paper:#f4efe3; --paper2:#e7dec9; --ink:#211c14; --soft:#6a6049; --line:#cabd9f;
-    --ivy:#0e3386; --tortuga:#9a2a2a; --lumber:#7a5230; --swamp:#cf7008; --headwaters:#1d4e63;
+    --ivy:#0e3386; --tortuga:#9a2a2a; --lumber:#7a5230; --headwaters:#1d4e63;
     --grab:#2f7d4f; --pass:#9a2a2a; --pend:#b8860b;
     --c:#211c14;
   }
@@ -57,8 +57,8 @@
   #verdict.PENDING{background:var(--pend);}
   .hide{display:none!important;}
   .hint{font-size:10.5px;color:var(--soft);margin-top:4px;}
-  .roster{display:flex;flex-wrap:wrap;gap:5px;margin:2px 0 2px;}
-  .roster span{background:var(--paper2);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:11.5px;color:var(--ink);line-height:1.15;}
+  .roster{column-count:2;column-gap:10px;margin:4px 0 2px;}
+  .roster span{display:block;break-inside:avoid;background:var(--paper2);border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:11.5px;color:var(--ink);line-height:1.2;margin-bottom:5px;}
   .roster span em{color:var(--soft);font-style:normal;font-size:9.5px;}
 </style>
 </head>
@@ -72,16 +72,15 @@
     <button data-c="ivy"        style="--bc:var(--ivy)">Ivy</button>
     <button data-c="tortuga"    style="--bc:var(--tortuga)">Tortuga</button>
     <button data-c="lumber"     style="--bc:var(--lumber)">Lumber</button>
-    <button data-c="swamp"      style="--bc:var(--swamp)">Swamp</button>
     <button data-c="headwaters" style="--bc:var(--headwaters)">Headwtr</button>
   </div>
 
   <div class="fit" id="fitNote">Pick a collection. You're confirming the player/team already fits — this only judges the card.</div>
 
   <div id="rosterWrap" class="hide">
-    <label>Lumber roster — is your guy here? (16)</label>
+    <label>Lumber roster — is your guy here? (15)</label>
     <div class="roster">
-      <span>Carlos Beltrán</span><span>Adrián Beltré</span><span>Barry Bonds</span><span>Miguel Cabrera</span><span>Freddie Freeman</span><span>Luis Gonzalez <em>(DBacks)</em></span><span>Ken Griffey Jr.</span><span>Todd Helton</span><span>Chipper Jones</span><span>Jeff Kent</span><span>David Ortiz</span><span>Rafael Palmeiro</span><span>Albert Pujols</span><span>Manny Ramirez</span><span>Cal Ripken Jr.</span><span>Alex Rodriguez</span>
+      <span>Carlos Beltrán</span><span>Adrián Beltré</span><span>Barry Bonds</span><span>Miguel Cabrera</span><span>Freddie Freeman</span><span>Luis Gonzalez <em>(DBacks)</em></span><span>Ken Griffey Jr.</span><span>Todd Helton</span><span>Chipper Jones</span><span>Jeff Kent</span><span>David Ortiz</span><span>Rafael Palmeiro</span><span>Albert Pujols</span><span>Manny Ramirez</span><span>Alex Rodriguez</span>
     </div>
   </div>
 
@@ -135,14 +134,14 @@ function bindSeg(id, key, cb){
 }
 bindSeg('coll','coll',b=>{
   state.coll=b.dataset.c;
-  const map={ivy:'--ivy',tortuga:'--tortuga',lumber:'--lumber',swamp:'--swamp',headwaters:'--headwaters'};
-  const names={ivy:'Cubs',tortuga:'Buccaneers (NFL)',lumber:'500 2B + 350 HR club (post-1980)',swamp:'Florida Gators (any sport)',headwaters:'MN pro teams'};
+  const map={ivy:'--ivy',tortuga:'--tortuga',lumber:'--lumber',headwaters:'--headwaters'};
+  const names={ivy:'Cubs',tortuga:'Buccaneers (NFL)',lumber:'500 2B + 350 HR club (1985+ debut)',headwaters:'MN pro teams'};
   document.documentElement.style.setProperty('--bc','var('+map[state.coll]+')');
   document.querySelector('.fit').style.setProperty('--bc','var('+map[state.coll]+')');
   document.getElementById('fitNote').innerHTML='Confirmed fit: <b>'+names[state.coll]+'</b>. This judges the card only.';
   document.getElementById('rosterWrap').classList.toggle('hide', state.coll!=='lumber');
-  // graded-only collections: hide Raw
-  const gradedOnly = (state.coll==='tortuga');
+  // no collection is graded-only anymore (Tortuga is a raw holding pen) — Raw always available
+  const gradedOnly = false;
   document.querySelector('#status button[data-rawopt]').classList.toggle('hide', gradedOnly);
   if(gradedOnly && state.status==='raw'){ setStatus('graded'); }
 });
@@ -201,11 +200,11 @@ function evaluate(i){
     return R('GRAB','Clears the '+gateLabel(i.year)+' bar.');
   }
 
-  // ---- TORTUGA (graded only) ----
+  // ---- TORTUGA (graded + raw holding pen) ----
   if(c==='tortuga'){
-    if(i.status==='raw') return R('PASS','Tortuga is graded-only — don’t grab raw.');
     if(junkwax) return R('PASS','Junk-wax common (’80–’94, no RC/auto/SP).');
     if(i.status==='atpsa') return R('PENDING','Out at PSA — decide when the grade is back.');
+    if(i.status==='raw') return R('GRAB','Raw holding pen — stage it, decide once it’s slabbed.');
     if(auto10) return R('GRAB','Certified auto (Auth/Auto 10) — auto-keep.');
     if(!gradeGatePass(i)) return R('PASS','Below the '+gateLabel(i.year)+' bar for its era.');
     if(i.year>2010){
@@ -229,19 +228,6 @@ function evaluate(i){
     if(i.pop==null) return R('PENDING','Need pop@grade — under 40 grabs, 40+ skips.');
     return i.pop<40 ? R('GRAB','Clears grade bar + low pop ('+i.pop+' < 40).')
                     : R('PASS','Pop '+i.pop+' (≥40) — too common.');
-  }
-
-  // ---- SWAMP (graded + raw) ----
-  if(c==='swamp'){
-    if(i.status==='atpsa') return R('PENDING','Out at PSA — decide when the grade is back.');
-    if(i.status==='raw') return rawRule(i,250);
-    if(auto10) return R('GRAB','Certified auto (Auth/Auto 10) — auto-keep.');
-    if(!gradeGatePass(i)) return R('PASS','Below the '+gateLabel(i.year)+' bar for its era.');
-    if(i.year<=2015) return R('GRAB','Clears the grade bar and it’s ≤2015.');
-    if(i.auto||i.spch||(i.pr!=null&&i.pr<=250)) return R('GRAB','Post-2015 + scarce (auto / SP / ≤250).');
-    if(i.pop!=null) return i.pop<=40 ? R('GRAB','Post-2015, pop '+i.pop+' (≤40).')
-                                     : R('PASS','Post-2015, pop '+i.pop+' (>40) — too common.');
-    return R('PENDING','Post-2015 — need pop (≤40 grabs) or auto/SP/≤250.');
   }
 
   // ---- HEADWATERS (graded + raw) ----
