@@ -10,7 +10,7 @@
 <style>
   :root{
     --paper:#f4efe3; --paper2:#e7dec9; --ink:#211c14; --soft:#6a6049; --line:#cabd9f;
-    --ivy:#0e3386; --tortuga:#9a2a2a; --lumber:#7a5230; --headwaters:#1d4e63;
+    --ivy:#0e3386; --tortuga:#9a2a2a; --lumber:#7a5230; --headwaters:#1d4e63; --wyatt:#5d3b73;
     --grab:#2f7d4f; --pass:#9a2a2a; --pend:#b8860b;
     --c:#211c14;
   }
@@ -73,6 +73,7 @@
     <button data-c="tortuga"    style="--bc:var(--tortuga)">Tortuga</button>
     <button data-c="lumber"     style="--bc:var(--lumber)">Lumber</button>
     <button data-c="headwaters" style="--bc:var(--headwaters)">Headwtr</button>
+    <button data-c="wyatt"      style="--bc:var(--wyatt)">Wyatt</button>
   </div>
 
   <div class="fit" id="fitNote">Pick a collection. You're confirming the player/team already fits — this only judges the card.</div>
@@ -134,13 +135,13 @@ function bindSeg(id, key, cb){
 }
 bindSeg('coll','coll',b=>{
   state.coll=b.dataset.c;
-  const map={ivy:'--ivy',tortuga:'--tortuga',lumber:'--lumber',headwaters:'--headwaters'};
-  const names={ivy:'Cubs',tortuga:'Buccaneers (NFL)',lumber:'500 2B + 350 HR club (1985+ debut)',headwaters:'MN pro teams'};
+  const map={ivy:'--ivy',tortuga:'--tortuga',lumber:'--lumber',headwaters:'--headwaters',wyatt:'--wyatt'};
+  const names={ivy:'Cubs',tortuga:'Buccaneers (NFL)',lumber:'500 2B + 350 HR club (1985+ debut)',headwaters:'MN pro teams',wyatt:'Wyatt Langford PC'};
   document.documentElement.style.setProperty('--bc','var('+map[state.coll]+')');
   document.querySelector('.fit').style.setProperty('--bc','var('+map[state.coll]+')');
   document.getElementById('fitNote').innerHTML='Confirmed fit: <b>'+names[state.coll]+'</b>. This judges the card only.';
   document.getElementById('rosterWrap').classList.toggle('hide', state.coll!=='lumber');
-  // no collection is graded-only anymore (Tortuga is a raw holding pen) — Raw always available
+  // Raw available everywhere now — Tortuga and Wyatt are both raw holding pens
   const gradedOnly = false;
   document.querySelector('#status button[data-rawopt]').classList.toggle('hide', gradedOnly);
   if(gradedOnly && state.status==='raw'){ setStatus('graded'); }
@@ -240,6 +241,33 @@ function evaluate(i){
     if(i.pop==null) return R('PENDING','Need pop@grade — under 40 grabs, 40+ skips.');
     return i.pop<40 ? R('GRAB','Clears grade bar + low pop ('+i.pop+' < 40).')
                     : R('PASS','Pop '+i.pop+' (≥40) — too common.');
+  }
+
+  // ---- WYATT (Wyatt Langford single-player PC — graded-only, strict) ----
+  if(c==='wyatt'){
+    if(i.status==='atpsa') return R('PENDING','Out at PSA — decide when the grade is back.');
+    if(i.status==='raw'){
+      if(i.spch || (i.auto && i.pr!=null && i.pr<=199) || (!i.auto && i.pr!=null && i.pr<=99))
+        return R('GRAB','Raw holding pen — scarce by # (SP / auto ≤/199 / non-auto ≤/99). Stage it, grade later.');
+      return R('PASS','Raw but not scarce (unnumbered or over the # bar) — not worth holding.');
+    }
+    if(auto10) return R('GRAB','Certified IP auto (Auth/Auto 10) → routes to Graffiti, not Wyatt.');
+    const gn=gradeNum(i.grade);
+    if(gn===10){
+      if(i.topPop) return R('GRAB','PSA 10, Top Pop — scarce enough.');
+      if(i.auto && i.pr!=null && i.pr<=199) return R('GRAB','PSA 10 auto, /'+i.pr+' (≤199 auto lane).');
+      if(!i.auto && i.pr!=null && i.pr<=99) return R('GRAB','PSA 10, /'+i.pr+' (≤99).');
+      if(i.spch) return R('GRAB','PSA 10, SP/CH — scarce.');
+      if(i.pop==null) return R('PENDING','PSA 10 — need pop@grade (≤50 grabs, >50 skips), or a low # / SP.');
+      return i.pop<=50 ? R('GRAB','PSA 10, low pop ('+i.pop+' ≤ 50).')
+                       : R('PASS','PSA 10 but common — pop '+i.pop+' (>50), no low # / SP / auto.');
+    }
+    if(gn===9){
+      if(i.pr!=null && i.pr<=10) return R('GRAB','PSA 9, /'+i.pr+' (≤10).');
+      if(i.topPop) return R('GRAB','PSA 9, Top Pop.');
+      return R('PASS','PSA 9 — only grabs at ≤/10 or Top Pop.');
+    }
+    return R('PASS','PSA '+(isNaN(gn)?'AUTH':gn)+' — below PSA 9, doesn’t qualify.');
   }
 }
 
