@@ -218,10 +218,10 @@ function evaluate(i){
     if(i.status==='raw') return R('GRAB','Raw holding pen — stage it, decide once it’s slabbed.');
     if(auto10) return R('GRAB','Certified IP auto (Auth/Auto 10) → routes to Graffiti, not The Kid.');
     if(!gradeGatePass(i)) return R('PASS','Below the '+gateLabel(i.year)+' bar for its era.');
-    if(i.year<=1992) return R('GRAB','Iconic ’89–’92 era — clears grade bar, pop doesn’t apply.');
-    if(i.pop==null) return R('PENDING','Post-’92 — need pop@grade (under 40 grabs, 40+ skips).');
-    return i.pop<40 ? R('GRAB','Post-’92, low pop ('+i.pop+' < 40).')
-                    : R('PASS','Post-’92, pop '+i.pop+' (≥40) — too common for the PC.');
+    if(i.year<=1995) return R('GRAB','Iconic ’89–’95 era — clears grade bar, pop doesn’t apply.');
+    if(i.pop==null) return R('PENDING','Post-’95 — need pop@grade (under 40 grabs, 40+ skips).');
+    return i.pop<40 ? R('GRAB','Post-’95, low pop ('+i.pop+' < 40).')
+                    : R('PASS','Post-’95, pop '+i.pop+' (≥40) — too common for the PC.');
   }
 
   // ---- HEADWATERS (graded + raw) ----
