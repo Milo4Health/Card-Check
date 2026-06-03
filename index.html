@@ -71,19 +71,14 @@
   <div class="seg coll" id="coll">
     <button data-c="ivy"        style="--bc:var(--ivy)">Ivy</button>
     <button data-c="tortuga"    style="--bc:var(--tortuga)">Tortuga</button>
-    <button data-c="lumber"     style="--bc:var(--lumber)">Lumber</button>
+    <button data-c="lumber"     style="--bc:var(--lumber)">The Kid</button>
     <button data-c="headwaters" style="--bc:var(--headwaters)">Headwtr</button>
     <button data-c="wyatt"      style="--bc:var(--wyatt)">Wyatt</button>
   </div>
 
   <div class="fit" id="fitNote">Pick a collection. You're confirming the player/team already fits — this only judges the card.</div>
 
-  <div id="rosterWrap" class="hide">
-    <label>Lumber roster — is your guy here? (15)</label>
-    <div class="roster">
-      <span>Carlos Beltrán</span><span>Adrián Beltré</span><span>Barry Bonds</span><span>Miguel Cabrera</span><span>Freddie Freeman</span><span>Luis Gonzalez <em>(DBacks)</em></span><span>Ken Griffey Jr.</span><span>Todd Helton</span><span>Chipper Jones</span><span>Jeff Kent</span><span>David Ortiz</span><span>Rafael Palmeiro</span><span>Albert Pujols</span><span>Manny Ramirez</span><span>Alex Rodriguez</span>
-    </div>
-  </div>
+  <div id="rosterWrap" class="hide"></div>
 
   <label>Status</label>
   <div class="seg" id="status">
@@ -136,11 +131,11 @@ function bindSeg(id, key, cb){
 bindSeg('coll','coll',b=>{
   state.coll=b.dataset.c;
   const map={ivy:'--ivy',tortuga:'--tortuga',lumber:'--lumber',headwaters:'--headwaters',wyatt:'--wyatt'};
-  const names={ivy:'Cubs',tortuga:'Buccaneers (NFL)',lumber:'500 2B + 350 HR club (1985+ debut)',headwaters:'MN pro teams',wyatt:'Wyatt Langford PC'};
+  const names={ivy:'Cubs',tortuga:'Buccaneers (NFL)',lumber:'Ken Griffey Jr. PC',headwaters:'MN pro teams',wyatt:'Wyatt Langford PC'};
   document.documentElement.style.setProperty('--bc','var('+map[state.coll]+')');
   document.querySelector('.fit').style.setProperty('--bc','var('+map[state.coll]+')');
   document.getElementById('fitNote').innerHTML='Confirmed fit: <b>'+names[state.coll]+'</b>. This judges the card only.';
-  document.getElementById('rosterWrap').classList.toggle('hide', state.coll!=='lumber');
+  document.getElementById('rosterWrap').classList.add('hide');
   // Raw available everywhere now — Tortuga and Wyatt are both raw holding pens
   const gradedOnly = false;
   document.querySelector('#status button[data-rawopt]').classList.toggle('hide', gradedOnly);
@@ -217,18 +212,16 @@ function evaluate(i){
     return R('GRAB','Clears the '+gateLabel(i.year)+' bar.');
   }
 
-  // ---- LUMBER (graded + raw holding pen) ----
+  // ---- THE KID (Ken Griffey Jr. PC — pop-hinge keeps iconic early-era cards despite high pop) ----
   if(c==='lumber'){
     if(i.status==='atpsa') return R('PENDING','Out at PSA — decide when the grade is back.');
     if(i.status==='raw') return R('GRAB','Raw holding pen — stage it, decide once it’s slabbed.');
-    if(auto10) return R('GRAB','Certified auto (Auth/Auto 10) — auto-keep.');
-    if(i.topPop) return R('GRAB','Top Pop — auto-keep.');
+    if(auto10) return R('GRAB','Certified IP auto (Auth/Auto 10) → routes to Graffiti, not The Kid.');
     if(!gradeGatePass(i)) return R('PASS','Below the '+gateLabel(i.year)+' bar for its era.');
-    if(i.year<1986) return R('GRAB','Pre-1986 vintage — clears grade bar, pop doesn’t apply.');
-    if(i.rc||i.auto||i.spch||(i.pr!=null&&i.pr<=99)) return R('GRAB','Clears grade bar + RC/scarce (RC / auto / SP / ≤99).');
-    if(i.pop==null) return R('PENDING','Need pop@grade — under 40 grabs, 40+ skips.');
-    return i.pop<40 ? R('GRAB','Clears grade bar + low pop ('+i.pop+' < 40).')
-                    : R('PASS','Pop '+i.pop+' (≥40) — too common.');
+    if(i.year<=1992) return R('GRAB','Iconic ’89–’92 era — clears grade bar, pop doesn’t apply.');
+    if(i.pop==null) return R('PENDING','Post-’92 — need pop@grade (under 40 grabs, 40+ skips).');
+    return i.pop<40 ? R('GRAB','Post-’92, low pop ('+i.pop+' < 40).')
+                    : R('PASS','Post-’92, pop '+i.pop+' (≥40) — too common for the PC.');
   }
 
   // ---- HEADWATERS (graded + raw) ----
