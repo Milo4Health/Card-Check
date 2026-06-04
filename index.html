@@ -73,7 +73,7 @@
     <button data-c="tortuga"    style="--bc:var(--tortuga)">Tortuga</button>
     <button data-c="lumber"     style="--bc:var(--lumber)">The Kid</button>
     <button data-c="headwaters" style="--bc:var(--headwaters)">Headwtr</button>
-    <button data-c="wyatt"      style="--bc:var(--wyatt)">Wyatt</button>
+    <button data-c="wyatt"      style="--bc:var(--wyatt)">Swamp</button>
   </div>
 
   <div class="fit" id="fitNote">Pick a collection. You're confirming the player/team already fits — this only judges the card.</div>
@@ -131,7 +131,7 @@ function bindSeg(id, key, cb){
 bindSeg('coll','coll',b=>{
   state.coll=b.dataset.c;
   const map={ivy:'--ivy',tortuga:'--tortuga',lumber:'--lumber',headwaters:'--headwaters',wyatt:'--wyatt'};
-  const names={ivy:'Cubs',tortuga:'Buccaneers (NFL)',lumber:'Ken Griffey Jr. PC',headwaters:'MN pro teams',wyatt:'Wyatt Langford PC'};
+  const names={ivy:'Cubs',tortuga:'Buccaneers (NFL)',lumber:'Ken Griffey Jr. PC',headwaters:'MN pro teams',wyatt:'FL Gators baseball'};
   document.documentElement.style.setProperty('--bc','var('+map[state.coll]+')');
   document.querySelector('.fit').style.setProperty('--bc','var('+map[state.coll]+')');
   document.getElementById('fitNote').innerHTML='Confirmed fit: <b>'+names[state.coll]+'</b>. This judges the card only.';
@@ -236,31 +236,16 @@ function evaluate(i){
                     : R('PASS','Pop '+i.pop+' (≥40) — too common.');
   }
 
-  // ---- WYATT (Wyatt Langford single-player PC — graded-only, strict) ----
+  // ---- SWAMP (FL Gators baseball — scarcity gate, then standard grade floor) ----
   if(c==='wyatt'){
-    if(i.status==='atpsa') return R('PENDING','Out at PSA — decide when the grade is back.');
-    if(i.status==='raw'){
-      if(i.spch || (i.auto && i.pr!=null && i.pr<=199) || (!i.auto && i.pr!=null && i.pr<=99))
-        return R('GRAB','Raw holding pen — scarce by # (SP / auto ≤/199 / non-auto ≤/99). Stage it, grade later.');
-      return R('PASS','Raw but not scarce (unnumbered or over the # bar) — not worth holding.');
-    }
-    if(auto10) return R('GRAB','Certified IP auto (Auth/Auto 10) → routes to Graffiti, not Wyatt.');
-    const gn=gradeNum(i.grade);
-    if(gn===10){
-      if(i.topPop) return R('GRAB','PSA 10, Top Pop — scarce enough.');
-      if(i.auto && i.pr!=null && i.pr<=199) return R('GRAB','PSA 10 auto, /'+i.pr+' (≤199 auto lane).');
-      if(!i.auto && i.pr!=null && i.pr<=99) return R('GRAB','PSA 10, /'+i.pr+' (≤99).');
-      if(i.spch) return R('GRAB','PSA 10, SP/CH — scarce.');
-      if(i.pop==null) return R('PENDING','PSA 10 — need pop@grade (≤50 grabs, >50 skips), or a low # / SP.');
-      return i.pop<=50 ? R('GRAB','PSA 10, low pop ('+i.pop+' ≤ 50).')
-                       : R('PASS','PSA 10 but common — pop '+i.pop+' (>50), no low # / SP / auto.');
-    }
-    if(gn===9){
-      if(i.pr!=null && i.pr<=10) return R('GRAB','PSA 9, /'+i.pr+' (≤10).');
-      if(i.topPop) return R('GRAB','PSA 9, Top Pop.');
-      return R('PASS','PSA 9 — only grabs at ≤/10 or Top Pop.');
-    }
-    return R('PASS','PSA '+(isNaN(gn)?'AUTH':gn)+' — below PSA 9, doesn’t qualify.');
+    if(auto10) return R('GRAB','Certified IP auto (Auth/Auto 10) → routes to Graffiti.');
+    // scarcity gate (every card): auto ≤/200 (unnumbered auto ok), non-auto ≤/100, SP/CH any
+    const scarce = i.spch || (i.auto && (i.pr==null || i.pr<=300)) || (!i.auto && i.pr!=null && i.pr<=200);
+    if(!scarce) return R('PASS','Fails scarcity — needs auto, SP/CH, ≤/300 (auto) or ≤/200 (non-auto).');
+    if(i.status==='atpsa') return R('PENDING','Out at PSA — clears scarcity; decide on grade return.');
+    if(i.status==='raw') return R('GRAB','Raw holding pen — clears scarcity (auto / SP / low #). Grade later.');
+    if(!gradeGatePass(i)) return R('PASS','Clears scarcity but below the '+gateLabel(i.year)+' grade bar.');
+    return R('GRAB','Clears scarcity + the '+gateLabel(i.year)+' grade bar.');
   }
 }
 
