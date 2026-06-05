@@ -10,7 +10,7 @@
 <style>
   :root{
     --paper:#f4efe3; --paper2:#e7dec9; --ink:#211c14; --soft:#6a6049; --line:#cabd9f;
-    --ivy:#0e3386; --tortuga:#9a2a2a; --lumber:#7a5230; --headwaters:#1d4e63; --wyatt:#5d3b73;
+    --ivy:#0e3386; --tortuga:#9a2a2a; --potpourri:#6a3d7a;
     --grab:#2f7d4f; --pass:#9a2a2a; --pend:#b8860b;
     --c:#211c14;
   }
@@ -44,6 +44,8 @@
   .fit{background:var(--paper2);border-radius:8px;padding:9px 12px;font-size:11.5px;color:var(--ink);margin:12px 0;border-left:5px solid var(--bc,var(--ink));}
   .fit b{color:var(--bc,var(--ink));}
 
+  #griffeyWrap .hint{margin-top:6px;}
+
   #go{width:100%;margin-top:18px;padding:16px;border:none;border-radius:10px;background:var(--ink);color:var(--paper);
     font-family:'Fraunces',serif;font-weight:700;font-size:18px;letter-spacing:.04em;cursor:pointer;text-transform:uppercase;}
 
@@ -51,15 +53,13 @@
   #verdict.show{display:block;animation:pop .18s ease;}
   @keyframes pop{from{transform:scale(.96);opacity:0;}to{transform:scale(1);opacity:1;}}
   #verdict .v{font-family:'Fraunces',serif;font-weight:900;font-size:46px;line-height:1;color:#fff;letter-spacing:.02em;}
+  #verdict .sub{display:none;color:rgba(255,255,255,.9);font-size:13px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;margin-top:6px;}
   #verdict .why{color:rgba(255,255,255,.92);font-size:13px;margin-top:10px;line-height:1.4;}
   #verdict.GRAB{background:var(--grab);}
   #verdict.PASS{background:var(--pass);}
   #verdict.PENDING{background:var(--pend);}
   .hide{display:none!important;}
   .hint{font-size:10.5px;color:var(--soft);margin-top:4px;}
-  .roster{column-count:2;column-gap:10px;margin:4px 0 2px;}
-  .roster span{display:block;break-inside:avoid;background:var(--paper2);border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:11.5px;color:var(--ink);line-height:1.2;margin-bottom:5px;}
-  .roster span em{color:var(--soft);font-style:normal;font-size:9.5px;}
 </style>
 </head>
 <body>
@@ -69,21 +69,25 @@
 
   <label>Collection</label>
   <div class="seg coll" id="coll">
-    <button data-c="ivy"        style="--bc:var(--ivy)">Ivy</button>
-    <button data-c="tortuga"    style="--bc:var(--tortuga)">Tortuga</button>
-    <button data-c="lumber"     style="--bc:var(--lumber)">The Kid</button>
-    <button data-c="headwaters" style="--bc:var(--headwaters)">Headwtr</button>
-    <button data-c="wyatt"      style="--bc:var(--wyatt)">Swamp</button>
+    <button data-c="ivy"       style="--bc:var(--ivy)">Ivy</button>
+    <button data-c="tortuga"   style="--bc:var(--tortuga)">Tortuga</button>
+    <button data-c="potpourri" style="--bc:var(--potpourri)">Potpourri</button>
   </div>
 
   <div class="fit" id="fitNote">Pick a collection. You're confirming the player/team already fits — this only judges the card.</div>
 
-  <div id="rosterWrap" class="hide"></div>
+  <div id="griffeyWrap" class="hide">
+    <label>Potpourri sub-engine</label>
+    <div class="toggles" style="grid-template-columns:1fr">
+      <button id="griffeyBtn"><span>Ken Griffey Jr.</span><span class="box"></span></button>
+    </div>
+    <div class="hint">On = iconic ’89–’95 keeps regardless of pop, post-’95 needs pop &lt; 40. Off = generic floor + pop ≤ 10.</div>
+  </div>
 
   <label>Status</label>
   <div class="seg" id="status">
     <button data-s="graded" class="on">Graded</button>
-    <button data-s="raw" data-rawopt="1">Raw</button>
+    <button data-s="raw">Raw</button>
     <button data-s="atpsa">At PSA<span class="hint" style="display:block">no grade yet</span></button>
   </div>
 
@@ -112,34 +116,28 @@
 
   <button id="go">Check it</button>
 
-  <div id="verdict"><div class="v"></div><div class="why"></div></div>
+  <div id="verdict"><div class="v"></div><div class="sub"></div><div class="why"></div></div>
 
 <script>
-const state = {coll:null, status:'graded',
+const state = {coll:null, status:'graded', griffey:false,
                topPop:false, auto:false, rc:false, spch:false};
 
 // ---- wiring ----
-function bindSeg(id, key, cb){
-  document.querySelectorAll('#'+id+' button').forEach(b=>{
-    b.onclick=()=>{
-      document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.remove('on'));
-      b.classList.add('on');
-      cb(b);
-    };
-  });
-}
-bindSeg('coll','coll',b=>{
-  state.coll=b.dataset.c;
-  const map={ivy:'--ivy',tortuga:'--tortuga',lumber:'--lumber',headwaters:'--headwaters',wyatt:'--wyatt'};
-  const names={ivy:'Cubs',tortuga:'Buccaneers (NFL)',lumber:'Ken Griffey Jr. PC',headwaters:'MN pro teams',wyatt:'FL Gators baseball'};
-  document.documentElement.style.setProperty('--bc','var('+map[state.coll]+')');
-  document.querySelector('.fit').style.setProperty('--bc','var('+map[state.coll]+')');
-  document.getElementById('fitNote').innerHTML='Confirmed fit: <b>'+names[state.coll]+'</b>. This judges the card only.';
-  document.getElementById('rosterWrap').classList.add('hide');
-  // Raw available everywhere now — Tortuga and Wyatt are both raw holding pens
-  const gradedOnly = false;
-  document.querySelector('#status button[data-rawopt]').classList.toggle('hide', gradedOnly);
-  if(gradedOnly && state.status==='raw'){ setStatus('graded'); }
+document.querySelectorAll('#coll button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('#coll button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    state.coll=b.dataset.c;
+    const map={ivy:'--ivy',tortuga:'--tortuga',potpourri:'--potpourri'};
+    const names={ivy:'Cubs',tortuga:'Buccaneers (NFL)',potpourri:'Potpourri — MN teams / FL Gators / Griffey (you vet the fit)'};
+    document.documentElement.style.setProperty('--bc','var('+map[state.coll]+')');
+    document.querySelector('.fit').style.setProperty('--bc','var('+map[state.coll]+')');
+    document.getElementById('fitNote').innerHTML='Confirmed fit: <b>'+names[state.coll]+'</b>. This judges the card only.';
+    // Griffey sub-engine toggle is Potpourri-only
+    const isPot = state.coll==='potpourri';
+    document.getElementById('griffeyWrap').classList.toggle('hide', !isPot);
+    if(!isPot){ state.griffey=false; document.getElementById('griffeyBtn').classList.remove('on'); }
+  };
 });
 function setStatus(s){
   state.status=s;
@@ -151,6 +149,7 @@ document.querySelectorAll('#status button').forEach(b=>b.onclick=()=>setStatus(b
 document.querySelectorAll('#traits button').forEach(b=>{
   b.onclick=()=>{ const t=b.dataset.t; state[t]=!state[t]; b.classList.toggle('on',state[t]); };
 });
+document.getElementById('griffeyBtn').onclick=function(){ state.griffey=!state.griffey; this.classList.toggle('on',state.griffey); };
 
 // ---- logic ----
 function decadeFloor(y){
@@ -168,29 +167,30 @@ function gradeGatePass(i){
   const floor=decadeFloor(i.year) - ((i.pr!=null && i.pr<=5)?1:0);
   return gn>=floor;
 }
-const R=(v,why)=>({v,why});
+const R=(v,why,tag)=>({v,why,tag});
 
+// Ivy raw rule (Ivy is the only long-term raw home that still auto-evaluates raw)
 function rawRule(i,thr){
-  if(i.auto||i.spch||(i.pr!=null && i.pr<=thr)) return R('GRAB','Raw but scarce — auto / ≤'+thr+' / SP clears it.');
-  if(i.pr==null) return R('PENDING','Raw, unnumbered — only grab if pack odds ≥ 20.');
+  if(i.auto||i.spch||(i.pr!=null && i.pr<=thr)) return R('GRAB','Raw but scarce — auto / SP / ≤'+thr+' clears it.');
+  if(i.pr==null) return R('PENDING','Raw, unnumbered — grab only if pack odds ≥ 20.');
   return R('PASS','Raw, numbered /'+i.pr+' (> '+thr+') — too common.');
 }
 
 function evaluate(i){
   const c=i.coll;
   const auto10 = gradeNum(i.grade)==='AUTO10';
-  const junkwax = (i.year>=1980 && i.year<1995 && !(i.rc||i.auto||i.spch));
+  const junkwax = (i.year!=null && i.year>=1980 && i.year<1995 && !(i.rc||i.auto||i.spch));
 
-  // ---- IVY ----
+  // ---- IVY (graded + long-term raw) ----
   if(c==='ivy'){
     if(junkwax) return R('PASS','Junk-wax common (’80–’94, no RC/auto/SP).');
-    if(i.status==='atpsa') return R('PENDING','Out at PSA — decide when the grade is back.');
+    if(i.status==='atpsa') return R('PENDING','Out at PSA — decide when the grade is back.','AT PSA');
     if(i.status==='raw') return rawRule(i,300);
-    if(auto10) return R('GRAB','Certified auto (Auth/Auto 10) — auto-keep.');
+    if(auto10) return R('GRAB','Certified Auth/Auto 10 — auto-keep.');
     if(!gradeGatePass(i)) return R('PASS','Below the '+gateLabel(i.year)+' bar for its era.');
     if(i.year>2010){
-      if(i.auto||i.spch||(i.pr!=null&&i.pr<=300)) return R('GRAB','Modern graded + scarce (auto / ≤300 / SP).');
-      if(i.pr==null) return R('PENDING','Modern graded — needs auto/≤300/SP, or pack odds ≥20.');
+      if(i.auto||i.spch||(i.pr!=null&&i.pr<=300)) return R('GRAB','Modern graded + scarce (auto / SP / ≤300).');
+      if(i.pr==null) return R('PENDING','Modern graded — needs auto/SP/≤300, or pack odds ≥20.');
       return R('PASS','Modern graded but /'+i.pr+' isn’t scarce enough (need ≤300/auto/SP).');
     }
     return R('GRAB','Clears the '+gateLabel(i.year)+' bar.');
@@ -199,53 +199,34 @@ function evaluate(i){
   // ---- TORTUGA (graded + raw holding pen) ----
   if(c==='tortuga'){
     if(junkwax) return R('PASS','Junk-wax common (’80–’94, no RC/auto/SP).');
-    if(i.status==='atpsa') return R('PENDING','Out at PSA — decide when the grade is back.');
-    if(i.status==='raw') return R('GRAB','Raw holding pen — stage it, decide once it’s slabbed.');
-    if(auto10) return R('GRAB','Certified auto (Auth/Auto 10) — auto-keep.');
+    if(i.status==='atpsa') return R('PENDING','Out at PSA — decide when the grade is back.','AT PSA');
+    if(i.status==='raw') return R('PENDING','Raw holding pen — stage it, decide once it’s slabbed.','HOLD');
+    if(auto10) return R('GRAB','Certified Auth/Auto 10 — auto-keep.');
     if(!gradeGatePass(i)) return R('PASS','Below the '+gateLabel(i.year)+' bar for its era.');
     if(i.year>2010){
       if(i.auto||i.spch||(i.pr!=null&&i.pr<=300)) return R('GRAB','Modern graded + scarce (auto / SP / ≤300).');
       if(i.pop!=null) return i.pop<=350 ? R('GRAB','Modern graded, pop '+i.pop+' (≤350).')
                                         : R('PASS','Modern graded, pop '+i.pop+' (>350) — too common.');
-      return R('PENDING','Modern graded — need pop (≤350 grabs) or auto/SP/≤300.');
+      return R('PENDING','Modern graded — need pop (≤350 grabs) or auto/SP/≤300.','POP');
     }
     return R('GRAB','Clears the '+gateLabel(i.year)+' bar.');
   }
 
-  // ---- THE KID (Ken Griffey Jr. PC — pop-hinge keeps iconic early-era cards despite high pop) ----
-  if(c==='lumber'){
-    if(i.status==='atpsa') return R('PENDING','Out at PSA — decide when the grade is back.');
-    if(i.status==='raw') return R('GRAB','Raw holding pen — stage it, decide once it’s slabbed.');
-    if(auto10) return R('GRAB','Certified IP auto (Auth/Auto 10) → routes to Graffiti, not The Kid.');
+  // ---- POTPOURRI (MN teams / FL Gators / Griffey & more — unified engine + Griffey sub-engine) ----
+  if(c==='potpourri'){
+    if(i.status==='atpsa') return R('PENDING','Out at PSA — decide when the grade is back.','AT PSA');
+    if(i.status==='raw') return R('PENDING','Raw holding pen — you’ll judge whether it makes the list.','HOLD');
+    if(auto10) return R('GRAB','Certified Auth/Auto 10 — auto-keep (routes to Graffiti).');
     if(!gradeGatePass(i)) return R('PASS','Below the '+gateLabel(i.year)+' bar for its era.');
-    if(i.year<=1995) return R('GRAB','Iconic ’89–’95 era — clears grade bar, pop doesn’t apply.');
-    if(i.pop==null) return R('PENDING','Post-’95 — need pop@grade (under 40 grabs, 40+ skips).');
-    return i.pop<40 ? R('GRAB','Post-’95, low pop ('+i.pop+' < 40).')
-                    : R('PASS','Post-’95, pop '+i.pop+' (≥40) — too common for the PC.');
-  }
-
-  // ---- HEADWATERS (graded + raw) ----
-  if(c==='headwaters'){
-    if(i.status==='atpsa') return R('PENDING','Out at PSA — decide when the grade is back.');
-    if(i.status==='raw') return rawRule(i,250);
-    if(auto10) return R('GRAB','Certified auto (Auth/Auto 10) — auto-keep.');
-    if(!gradeGatePass(i)) return R('PASS','Below the '+gateLabel(i.year)+' bar for its era.');
-    if(i.year<1986) return R('GRAB','Pre-1986 vintage — clears grade bar, pop doesn’t apply.');
-    if(i.pop==null) return R('PENDING','Need pop@grade — under 40 grabs, 40+ skips.');
-    return i.pop<40 ? R('GRAB','Clears grade bar + low pop ('+i.pop+' < 40).')
-                    : R('PASS','Pop '+i.pop+' (≥40) — too common.');
-  }
-
-  // ---- SWAMP (FL Gators baseball — scarcity gate, then standard grade floor) ----
-  if(c==='wyatt'){
-    if(auto10) return R('GRAB','Certified IP auto (Auth/Auto 10) → routes to Graffiti.');
-    // scarcity gate (every card): auto ≤/200 (unnumbered auto ok), non-auto ≤/100, SP/CH any
-    const scarce = i.spch || (i.auto && (i.pr==null || i.pr<=300)) || (!i.auto && i.pr!=null && i.pr<=200);
-    if(!scarce) return R('PASS','Fails scarcity — needs auto, SP/CH, ≤/300 (auto) or ≤/200 (non-auto).');
-    if(i.status==='atpsa') return R('PENDING','Out at PSA — clears scarcity; decide on grade return.');
-    if(i.status==='raw') return R('GRAB','Raw holding pen — clears scarcity (auto / SP / low #). Grade later.');
-    if(!gradeGatePass(i)) return R('PASS','Clears scarcity but below the '+gateLabel(i.year)+' grade bar.');
-    return R('GRAB','Clears scarcity + the '+gateLabel(i.year)+' grade bar.');
+    if(i.griffey){
+      if(i.year<=1995) return R('GRAB','Griffey, iconic ’89–’95 era — clears bar, pop doesn’t apply.');
+      if(i.pop==null) return R('PENDING','Griffey post-’95 — need pop@grade (under 40 grabs, 40+ skips).','POP');
+      return i.pop<40 ? R('GRAB','Griffey post-’95, low pop ('+i.pop+' < 40).')
+                      : R('PASS','Griffey post-’95, pop '+i.pop+' (≥40) — too common for the PC.');
+    }
+    if(i.pop==null) return R('PENDING','Need pop@grade — 10 or under grabs, 11+ skips.','POP');
+    return i.pop<=10 ? R('GRAB','Clears the bar + low pop ('+i.pop+' ≤ 10).')
+                     : R('PASS','Pop '+i.pop+' (>10) — too common for Potpourri.');
   }
 }
 
@@ -256,21 +237,24 @@ document.getElementById('go').onclick=()=>{
   const prRaw = document.getElementById('pr').value;
   const popRaw = document.getElementById('pop').value;
   const i = {
-    coll:state.coll, status:state.status,
+    coll:state.coll, status:state.status, griffey:state.griffey,
     grade:document.getElementById('grade').value,
     year: isNaN(yr)?null:yr,
     pr: prRaw===''?null:parseInt(prRaw),
     pop: popRaw===''?null:parseInt(popRaw),
     topPop:state.topPop, auto:state.auto, rc:state.rc, spch:state.spch
   };
-  if(i.status!=='atpsa' && i.year==null){ flash('PENDING','Enter the year — the grade bar depends on it.'); return; }
+  if(i.status==='graded' && i.year==null){ flash('PENDING','Enter the year — the grade bar depends on it.'); return; }
   const res = evaluate(i);
-  flash(res.v,res.why);
+  flash(res.v,res.why,res.tag);
 };
-function flash(v,why){
+function flash(v,why,tag){
   const el=document.getElementById('verdict');
   el.className='show '+v;
-  el.querySelector('.v').textContent = v==='GRAB'?'GRAB':(v==='PASS'?'PASS':'PENDING');
+  el.querySelector('.v').textContent = v;
+  const sub=el.querySelector('.sub');
+  sub.textContent = tag||'';
+  sub.style.display = tag?'block':'none';
   el.querySelector('.why').textContent = why;
   el.scrollIntoView({behavior:'smooth',block:'center'});
 }
