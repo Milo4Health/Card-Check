@@ -10,7 +10,7 @@
 <style>
   :root{
     --paper:#f4efe3; --paper2:#e7dec9; --ink:#211c14; --soft:#6a6049; --line:#cabd9f;
-    --ivy:#0e3386; --tortuga:#9a2a2a; --potpourri:#6a3d7a;
+    --ivy:#0e3386; --tortuga:#9a2a2a; --pinetar:#6b4423;
     --grab:#2f7d4f; --pass:#9a2a2a; --pend:#b8860b;
     --c:#211c14;
   }
@@ -69,7 +69,7 @@
   <div class="seg coll" id="coll">
     <button data-c="ivy"       style="--bc:var(--ivy)">Ivy</button>
     <button data-c="tortuga"   style="--bc:var(--tortuga)">Tortuga</button>
-    <button data-c="potpourri" style="--bc:var(--potpourri)">Potpourri</button>
+    <button data-c="pinetar" style="--bc:var(--pinetar)">Pine Tar</button>
   </div>
 
   <div class="fit" id="fitNote">Pick a collection. You're confirming the player/team already fits — this only judges the card.</div>
@@ -118,8 +118,8 @@ document.querySelectorAll('#coll button').forEach(b=>{
     document.querySelectorAll('#coll button').forEach(x=>x.classList.remove('on'));
     b.classList.add('on');
     state.coll=b.dataset.c;
-    const map={ivy:'--ivy',tortuga:'--tortuga',potpourri:'--potpourri'};
-    const names={ivy:'Cubs',tortuga:'Buccaneers (NFL)',potpourri:'Potpourri — MN teams / FL Gators / Griffey (you vet the fit)'};
+    const map={ivy:'--ivy',tortuga:'--tortuga',pinetar:'--pinetar'};
+    const names={ivy:'Cubs',tortuga:'Buccaneers (NFL)',pinetar:'Baseball — Twins/MN, Gators/FL, Griffey (you vet the fit)'};
     document.documentElement.style.setProperty('--bc','var('+map[state.coll]+')');
     document.querySelector('.fit').style.setProperty('--bc','var('+map[state.coll]+')');
     document.getElementById('fitNote').innerHTML='Confirmed fit: <b>'+names[state.coll]+'</b>. This judges the card only.';
@@ -197,17 +197,17 @@ function evaluate(i){
     return R('GRAB','Clears the '+gateLabel(i.year)+' bar.');
   }
 
-  // ---- POTPOURRI (MN sports / FL baseball / Griffey & more — strict: numbered /200 or less + grade floor + pop ≤ 10) ----
-  if(c==='potpourri'){
+  // ---- PINE TAR (baseball only — strict: numbered /200 or less + grade floor + pop ≤ 10) ----
+  if(c==='pinetar'){
     if(i.status==='atpsa') return R('PENDING','Out at PSA — decide when the grade is back.','AT PSA');
     if(i.status==='raw') return R('PENDING','Raw holding pen — you’ll judge whether it makes the list.','HOLD');
     if(auto10) return R('GRAB','Certified Auth/Auto 10 — auto-keep (routes to Graffiti).');
-    if(i.pr==null) return R('PASS','Potpourri requires a numbered print run of /200 or less — this one’s unnumbered.');
+    if(i.pr==null) return R('PASS','Pine Tar requires a numbered print run of /200 or less — this one’s unnumbered.');
     if(i.pr>200) return R('PASS','Print run /'+i.pr+' (> 200) — outside the /200 cutoff.');
     if(!gradeGatePass(i)) return R('PASS','Below the '+gateLabel(i.year)+' bar for its era.');
     if(i.pop==null) return R('PENDING','Need pop@grade — 10 or under grabs, 11+ skips.','POP');
     return i.pop<=10 ? R('GRAB','Clears /200 + the bar + low pop ('+i.pop+' ≤ 10).')
-                     : R('PASS','Pop '+i.pop+' (>10) — too common for Potpourri.');
+                     : R('PASS','Pop '+i.pop+' (>10) — too common for Pine Tar.');
   }
 }
 
