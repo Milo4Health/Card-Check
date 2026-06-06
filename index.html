@@ -44,8 +44,6 @@
   .fit{background:var(--paper2);border-radius:8px;padding:9px 12px;font-size:11.5px;color:var(--ink);margin:12px 0;border-left:5px solid var(--bc,var(--ink));}
   .fit b{color:var(--bc,var(--ink));}
 
-  #griffeyWrap .hint{margin-top:6px;}
-
   #go{width:100%;margin-top:18px;padding:16px;border:none;border-radius:10px;background:var(--ink);color:var(--paper);
     font-family:'Fraunces',serif;font-weight:700;font-size:18px;letter-spacing:.04em;cursor:pointer;text-transform:uppercase;}
 
@@ -75,14 +73,6 @@
   </div>
 
   <div class="fit" id="fitNote">Pick a collection. You're confirming the player/team already fits — this only judges the card.</div>
-
-  <div id="griffeyWrap" class="hide">
-    <label>Potpourri sub-engine</label>
-    <div class="toggles" style="grid-template-columns:1fr">
-      <button id="griffeyBtn"><span>Ken Griffey Jr.</span><span class="box"></span></button>
-    </div>
-    <div class="hint">On = iconic ’89–’95 keeps regardless of pop, post-’95 needs pop &lt; 40. Off = generic floor + pop ≤ 10.</div>
-  </div>
 
   <label>Status</label>
   <div class="seg" id="status">
@@ -119,7 +109,7 @@
   <div id="verdict"><div class="v"></div><div class="sub"></div><div class="why"></div></div>
 
 <script>
-const state = {coll:null, status:'graded', griffey:false,
+const state = {coll:null, status:'graded',
                topPop:false, auto:false, rc:false, spch:false};
 
 // ---- wiring ----
@@ -133,10 +123,6 @@ document.querySelectorAll('#coll button').forEach(b=>{
     document.documentElement.style.setProperty('--bc','var('+map[state.coll]+')');
     document.querySelector('.fit').style.setProperty('--bc','var('+map[state.coll]+')');
     document.getElementById('fitNote').innerHTML='Confirmed fit: <b>'+names[state.coll]+'</b>. This judges the card only.';
-    // Griffey sub-engine toggle is Potpourri-only
-    const isPot = state.coll==='potpourri';
-    document.getElementById('griffeyWrap').classList.toggle('hide', !isPot);
-    if(!isPot){ state.griffey=false; document.getElementById('griffeyBtn').classList.remove('on'); }
   };
 });
 function setStatus(s){
@@ -149,7 +135,6 @@ document.querySelectorAll('#status button').forEach(b=>b.onclick=()=>setStatus(b
 document.querySelectorAll('#traits button').forEach(b=>{
   b.onclick=()=>{ const t=b.dataset.t; state[t]=!state[t]; b.classList.toggle('on',state[t]); };
 });
-document.getElementById('griffeyBtn').onclick=function(){ state.griffey=!state.griffey; this.classList.toggle('on',state.griffey); };
 
 // ---- logic ----
 function decadeFloor(y){
@@ -212,20 +197,16 @@ function evaluate(i){
     return R('GRAB','Clears the '+gateLabel(i.year)+' bar.');
   }
 
-  // ---- POTPOURRI (MN teams / FL Gators / Griffey & more — unified engine + Griffey sub-engine) ----
+  // ---- POTPOURRI (MN sports / FL baseball / Griffey & more — strict: numbered /200 or less + grade floor + pop ≤ 10) ----
   if(c==='potpourri'){
     if(i.status==='atpsa') return R('PENDING','Out at PSA — decide when the grade is back.','AT PSA');
     if(i.status==='raw') return R('PENDING','Raw holding pen — you’ll judge whether it makes the list.','HOLD');
     if(auto10) return R('GRAB','Certified Auth/Auto 10 — auto-keep (routes to Graffiti).');
+    if(i.pr==null) return R('PASS','Potpourri requires a numbered print run of /200 or less — this one’s unnumbered.');
+    if(i.pr>200) return R('PASS','Print run /'+i.pr+' (> 200) — outside the /200 cutoff.');
     if(!gradeGatePass(i)) return R('PASS','Below the '+gateLabel(i.year)+' bar for its era.');
-    if(i.griffey){
-      if(i.year<=1995) return R('GRAB','Griffey, iconic ’89–’95 era — clears bar, pop doesn’t apply.');
-      if(i.pop==null) return R('PENDING','Griffey post-’95 — need pop@grade (under 40 grabs, 40+ skips).','POP');
-      return i.pop<40 ? R('GRAB','Griffey post-’95, low pop ('+i.pop+' < 40).')
-                      : R('PASS','Griffey post-’95, pop '+i.pop+' (≥40) — too common for the PC.');
-    }
     if(i.pop==null) return R('PENDING','Need pop@grade — 10 or under grabs, 11+ skips.','POP');
-    return i.pop<=10 ? R('GRAB','Clears the bar + low pop ('+i.pop+' ≤ 10).')
+    return i.pop<=10 ? R('GRAB','Clears /200 + the bar + low pop ('+i.pop+' ≤ 10).')
                      : R('PASS','Pop '+i.pop+' (>10) — too common for Potpourri.');
   }
 }
@@ -237,7 +218,7 @@ document.getElementById('go').onclick=()=>{
   const prRaw = document.getElementById('pr').value;
   const popRaw = document.getElementById('pop').value;
   const i = {
-    coll:state.coll, status:state.status, griffey:state.griffey,
+    coll:state.coll, status:state.status,
     grade:document.getElementById('grade').value,
     year: isNaN(yr)?null:yr,
     pr: prRaw===''?null:parseInt(prRaw),
