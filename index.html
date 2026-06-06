@@ -143,13 +143,14 @@ function decadeFloor(y){
 }
 function gradeNum(g){ const m=/PSA (\d+)/.exec(g); return (g==='PSA AUTH/AUTO 10')?'AUTO10':(m?+m[1]:NaN); }
 function gateLabel(y){ const f=decadeFloor(y); return f===0?'any grade':('PSA '+f); }
+function gateLabelPlus(y){ return 'PSA '+(decadeFloor(y)+1); }
 
-function gradeGatePass(i){
+function gradeGatePass(i, bump){
   if(i.topPop) return true;
   const gn=gradeNum(i.grade);
   if(gn==='AUTO10') return true;
   if(isNaN(gn)) return false;            // plain AUTH etc. -> only Top Pop saves it
-  const floor=decadeFloor(i.year) - ((i.pr!=null && i.pr<=5)?1:0);
+  const floor=decadeFloor(i.year) + (bump||0) - ((i.pr!=null && i.pr<=5)?1:0);
   return gn>=floor;
 }
 const R=(v,why,tag)=>({v,why,tag});
@@ -197,17 +198,26 @@ function evaluate(i){
     return R('GRAB','Clears the '+gateLabel(i.year)+' bar.');
   }
 
-  // ---- PINE TAR (baseball only — strict: numbered /200 or less + grade floor + pop ≤ 10) ----
+  // ---- PINE TAR (baseball only — vintage = Ivy junk-wax + floor +1; 1995+ scarce: numbered + pop ≤ 25) ----
   if(c==='pinetar'){
+    if(junkwax) return R('PASS','Junk-wax common (’80–’94, no RC/auto/SP) — out, raw or graded.');
     if(i.status==='atpsa') return R('PENDING','Out at PSA — decide when the grade is back.','AT PSA');
     if(i.status==='raw') return R('PENDING','Raw holding pen — you’ll judge whether it makes the list.','HOLD');
     if(auto10) return R('GRAB','Certified Auth/Auto 10 — auto-keep (routes to Graffiti).');
-    if(i.pr==null) return R('PASS','Pine Tar requires a numbered print run of /200 or less — this one’s unnumbered.');
-    if(i.pr>200) return R('PASS','Print run /'+i.pr+' (> 200) — outside the /200 cutoff.');
+    // vintage ≤1994 — floor +1 (a notch more selective than Ivy), no PR/pop
+    if(i.year<=1994){
+      return gradeGatePass(i,1) ? R('GRAB','Vintage — clears the '+gateLabelPlus(i.year)+' bar (floor +1, no PR/pop).')
+                                : R('PASS','Below the '+gateLabelPlus(i.year)+' bar (Pine Tar vintage runs floor +1).');
+    }
+    // 1995+ — must be numbered + pop ≤ 25; PR cutoff is /999 through 2010, /200 from 2011 on
+    const thr = (i.year<=2010) ? 999 : 200;
+    const band = (i.year<=2010) ? '’95–’10' : '’11+';
+    if(i.pr==null) return R('PASS','1995+ needs a numbered print run (≤'+thr+' for '+band+') — this one’s unnumbered.');
+    if(i.pr>thr) return R('PASS','Print run /'+i.pr+' (> '+thr+') — outside the '+band+' /'+thr+' cutoff.');
     if(!gradeGatePass(i)) return R('PASS','Below the '+gateLabel(i.year)+' bar for its era.');
-    if(i.pop==null) return R('PENDING','Need pop@grade — 10 or under grabs, 11+ skips.','POP');
-    return i.pop<=10 ? R('GRAB','Clears /200 + the bar + low pop ('+i.pop+' ≤ 10).')
-                     : R('PASS','Pop '+i.pop+' (>10) — too common for Pine Tar.');
+    if(i.pop==null) return R('PENDING','Need pop@grade — 25 or under grabs, 26+ skips.','POP');
+    return i.pop<=25 ? R('GRAB','Clears /'+thr+' + the bar + pop ('+i.pop+' ≤ 25).')
+                     : R('PASS','Pop '+i.pop+' (>25) — too common for Pine Tar.');
   }
 }
 
