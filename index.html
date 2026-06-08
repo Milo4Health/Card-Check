@@ -209,14 +209,16 @@ function evaluate(i){
       return gradeGatePass(i,1) ? R('GRAB','Vintage — clears the '+gateLabelPlus(i.year)+' bar (floor +1, no PR/pop).')
                                 : R('PASS','Below the '+gateLabelPlus(i.year)+' bar (Pine Tar vintage runs floor +1).');
     }
-    // 1995+ — must be numbered + pop ≤ 25; PR cutoff is /999 through 2010, /200 from 2011 on
+    // 1995+ — must be numbered (or SP/CH) + clear floor + pop ≤ 25; PR cutoff /999 through 2010, /200 from 2011
     const thr = (i.year<=2010) ? 999 : 200;
     const band = (i.year<=2010) ? '’95–’10' : '’11+';
-    if(i.pr==null) return R('PASS','1995+ needs a numbered print run (≤'+thr+' for '+band+') — this one’s unnumbered.');
-    if(i.pr>thr) return R('PASS','Print run /'+i.pr+' (> '+thr+') — outside the '+band+' /'+thr+' cutoff.');
+    if(!i.spch){
+      if(i.pr==null) return R('PASS','1995+ needs a numbered print run (≤'+thr+' for '+band+') or SP/CH — this has neither.');
+      if(i.pr>thr) return R('PASS','Print run /'+i.pr+' (> '+thr+') and not SP/CH — outside the '+band+' /'+thr+' cutoff.');
+    }
     if(!gradeGatePass(i)) return R('PASS','Below the '+gateLabel(i.year)+' bar for its era.');
     if(i.pop==null) return R('PENDING','Need pop@grade — 25 or under grabs, 26+ skips.','POP');
-    return i.pop<=25 ? R('GRAB','Clears /'+thr+' + the bar + pop ('+i.pop+' ≤ 25).')
+    return i.pop<=25 ? R('GRAB',(i.spch?'SP/CH clears the print-run gate':'Clears /'+thr)+' + the bar + pop ('+i.pop+' ≤ 25).')
                      : R('PASS','Pop '+i.pop+' (>25) — too common for Pine Tar.');
   }
 }
