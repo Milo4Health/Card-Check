@@ -100,7 +100,7 @@
   <div class="toggles" id="traits">
     <button data-t="topPop"><span>Top Pop</span><span class="box"></span></button>
     <button data-t="auto"><span>Auto</span><span class="box"></span></button>
-    <button data-t="rc"><span>RC / 1st Bowman</span><span class="box"></span></button>
+    <button data-t="rc"><span>RC / 1st Bowman / BB Prospect</span><span class="box"></span></button>
     <button data-t="spch"><span>SP / CH</span><span class="box"></span></button>
   </div>
 
@@ -212,15 +212,15 @@ function evaluate(i){
     // 1995+ — must be numbered (or SP/CH) + clear floor + pop ≤ 25; PR cutoff /999 through 2010, /200 from 2011
     const thr = (i.year<=2010) ? 999 : 200;
     const band = (i.year<=2010) ? '’95–’10' : '’11+';
-    // print-run gate is waived by SP/CH, or by an autographed rookie / 1st Bowman
+    // print-run gate is waived by SP/CH, or by an auto rookie / 1st Bowman / Bowman's Best prospect
     const prExempt = i.spch || (i.auto && i.rc);
     if(!prExempt){
-      if(i.pr==null) return R('PASS','1995+ needs a numbered run (≤'+thr+' for '+band+'), SP/CH, or an auto RC/1st-Bowman — none here.');
-      if(i.pr>thr) return R('PASS','Print run /'+i.pr+' (> '+thr+'), no SP/CH or auto RC/1st-Bowman — outside '+band+' /'+thr+'.');
+      if(i.pr==null) return R('PASS','1995+ needs a numbered run (≤'+thr+' for '+band+'), SP/CH, or an auto RC/1st-Bowman/BB-Prospect — none here.');
+      if(i.pr>thr) return R('PASS','Print run /'+i.pr+' (> '+thr+'), no SP/CH or auto RC/1st-Bowman/BB-Prospect — outside '+band+' /'+thr+'.');
     }
     if(!gradeGatePass(i)) return R('PASS','Below the '+gateLabel(i.year)+' bar for its era.');
     if(i.pop==null) return R('PENDING','Need pop@grade — 50 or under grabs, 51+ skips.','POP');
-    return i.pop<=50 ? R('GRAB',(prExempt?'Print-run gate waived (SP/CH or auto RC/1B)':'Clears /'+thr)+' + the bar + pop ('+i.pop+' ≤ 50).')
+    return i.pop<=50 ? R('GRAB',(prExempt?'Print-run gate waived (SP/CH or auto RC/1B/BB-Prospect)':'Clears /'+thr)+' + the bar + pop ('+i.pop+' ≤ 50).')
                      : R('PASS','Pop '+i.pop+' (>50) — too common for Pine Tar.');
   }
 }
